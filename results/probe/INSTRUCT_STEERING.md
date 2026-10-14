@@ -45,11 +45,16 @@ The paper's honeypot-steering causal result does NOT replicate on OLMo 3.1 32B I
   change the decision. Negative and random controls are also ~0% (effect is not even nonspecific).
 
 Combined with Think (where the method was unmeasurable due to long reasoning), honeypot steering is the
-one Goodfire result we could NOT reproduce at 32B scale. Likely factors: different model family/alignment
-(paper used Qwen 3.8 27B with a tuned layer/strength), a strong "don't use it" instruction, and that a
-single-layer DoM steer degrades the model before reaching a behavioral threshold. A cleaner test would
-need per-layer/strength tuning and possibly a weaker prohibition — but as run (faithful to our setup and
-the paper's framing), the causal effect is absent.
+one Goodfire result we could NOT reproduce at 32B scale.
+
+Most likely reason -- a prompt-framing mismatch. The paper's honeypot prompt just ANNOUNCES the helper
+exists and measures uptake; ours adds "you should NOT rely on it; implement the solution properly." So we
+measured "does steering make the model defy an explicit instruction" (baseline 0%), not the paper's "does
+steering make it take an available shortcut" (baseline ~0.5% -> 25%). Forbidding the helper plausibly sets
+the baseline to zero and raises the bar beyond what a blunt steer can clear. Other factors: different model
+(Qwen 3.8 27B vs OLMo), the paper's tuned layer/strength vs our single L40 + coarse grid, and that a
+single-layer DoM steer degrades fluency before reaching a behavioral threshold. A re-run with announce-only
+framing (and a finer strength/layer sweep) should come before calling this a true null.
 
 ## Caveats
 n=48/condition (CI ~+-7% at 0%); single layer (L40); the DoM-direction steer couples "cheating" with

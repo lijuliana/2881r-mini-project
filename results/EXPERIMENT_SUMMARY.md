@@ -33,8 +33,10 @@ OLMo 3.1 32B Think (main) + Instruct (steering). Benchmark: Impossible-LCB. Judg
 - Instruct: 0/48 at every strength; negative + random controls also ~0 (paper: 0.5% -> 25%).
 - Real null, not a bug -- high strength garbles the output and breaks it into gibberish; the direction
   degrades the model before behavior flips.
-- Maybe partly on us: stricter framing than the paper, one layer (L40), coarse strength grid, n=48 only
-  rules out a big effect. "No effect under our setup," not "impossible."
+- Most likely why: our prompt says "do NOT rely on it", the paper's just announces the helper. So we were
+  testing "does steering make it defy an explicit instruction" (baseline 0%), not "does steering make it
+  take a shortcut" (paper baseline 0.5% -> 25%). That raises the bar a lot. Other suspects: one layer (L40),
+  coarse strength grid, n=48. Worth a re-run with announce-only framing before calling it a true null.
 
 ## Caveats
 - One benchmark (no SWE-V). Minimal scaffold, so no test file to edit -- sophisticated hacks aren't even
