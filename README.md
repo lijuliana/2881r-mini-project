@@ -17,6 +17,10 @@ later a second model), instead of the paper's 1T+ frontier models.
   - **Honeypot steering: does not cleanly transfer** — OLMo Think reasons too long to reach code within a
     feasible generation budget, so the paper's bait-uptake protocol isn't measurable here.
   Plan in `notes/replication_plan.md`.
+- **Three-model replication (Qwen3.8-27B, gpt-oss-120b, GLM-4.5-Air): DONE.** Full T0–T4 replication with a
+  stage split (the probe scores 0.92–0.93 on considered hacks vs 0.71–0.74 on carried-out ones), a capability
+  control, and negative steering on GLM (no reduction in hacking until the model breaks). See `rh_probe/README.md`
+  and `rh_probe/report/rh_probe_report_filled.html`.
 
 ## Layout
 - `notes/` — `paper_notes.md` (method we replicate), `background_research.md` (models/benchmarks/prior work),
