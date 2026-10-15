@@ -27,16 +27,17 @@ OLMo 3.1 32B Think (main) + Instruct (steering). Benchmark: Impossible-LCB. Judg
 - Paper's pitch is probe ~= expensive monitor. Ours is weaker: at ~10% FPR the probe catches 52% vs the
   monitor's 81%. Blame 32B scale + 211 pairs (paper had ~5,285) + cross-distribution.
 
-## Honeypot steering: doesn't replicate
-- Offer a cheat helper `zzz('solution.py')`, forbid it, steer along the hack direction, check if it uses it.
+## Honeypot steering: doesn't replicate (checked carefully)
+- Announce a cheat helper `zzz('solution.py')`, steer along the hack direction, check if it calls it.
 - Think: can't measure (reasons too long to reach code).
-- Instruct: 0/48 at every strength; negative + random controls also ~0 (paper: 0.5% -> 25%).
-- Real null, not a bug -- high strength garbles the output and breaks it into gibberish; the direction
-  degrades the model before behavior flips.
-- Most likely why: our prompt says "do NOT rely on it", the paper's just announces the helper. So we were
-  testing "does steering make it defy an explicit instruction" (baseline 0%), not "does steering make it
-  take a shortcut" (paper baseline 0.5% -> 25%). That raises the bar a lot. Other suspects: one layer (L40),
-  coarse strength grid, n=48. Worth a re-run with announce-only framing before calling it a true null.
+- Instruct (announce-only framing, matching the paper): baseline 2.1%, then flat across strengths -8..+8
+  (0 / 4.2 / 2.1 / 2.1 / 0 / 0 / 4.2%, n=48 each) -- no dose-response. Paper: 0.5% -> 25%.
+- Verified it's a real null, not a bug: a diagnostic shows the steering hook works (output goes clean ->
+  coherent -> garbled -> gibberish as strength rises), on both transformers 4.57 and 5.19. Amplifying the
+  direction breaks the model's writing before it flips behavior -- no coherent-cheating sweet spot.
+- We first ran a WRONG version that forbade the helper ("do NOT rely on it"), which the paper doesn't; that
+  zeroed the baseline. Re-ran announce-only and the null survived -- so framing wasn't the cause, it only
+  suppressed the baseline. Remaining limitation: single layer (L40), n=48 (rules out a big effect, not a tiny one).
 
 ## Caveats
 - One benchmark (no SWE-V). Minimal scaffold, so no test file to edit -- sophisticated hacks aren't even
@@ -62,7 +63,7 @@ Scorecard, us vs paper:
 | Logit-lens = cheating words | cheating, illicit, hardcoded | bypass, fake, cheat, dummy, pretend | replicates |
 | Probe detects hacking (AUROC) | 0.74-0.97 | 0.78 held-out / 0.84 best | replicates |
 | Probe ~= LLM monitor | yes | 52% vs 81% TPR @ 10% FPR | diverges |
-| Steering causes hacking | 0.5% -> 25% | 0/48 (null) | diverges |
+| Steering causes hacking | 0.5% -> 25% | baseline 2%, flat -8..+8 (null) | diverges |
 
 P(hack) breakdown (3x consensus, defects excluded):
 
