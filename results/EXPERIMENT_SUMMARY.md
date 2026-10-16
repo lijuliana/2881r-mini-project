@@ -19,6 +19,14 @@ OLMo 3.1 32B Think (main) + Instruct (steering). Benchmark: Impossible-LCB. Judg
 - The DoM vector decodes to bypass, fake, cheat, dummy, pretend, artificially (layers 28-40). None of those
   words are in the synthetic pairs it's built from. Same on Instruct. This is the paper's Table 1.
 
+## J-lens / J++: confirms and sharpens the logit-lens readout (extension)
+- Put the same direction through a transfer-free finite-difference J-lens and a borrowed J++ lens (fit on
+  Olmo-3 base), vs the logit lens. Think, 3/3 self-checks passed. Details: results/probe/JLENS.md.
+- All three lenses read the same cheating cluster; the faithful lenses pull explicit tokens to the top and
+  surface `hardcoded` at L40/48 -- the exact behavior from Exp1 (100% of hacks were hardcoding).
+- Agreement rises with depth (logit<->J cos 0.69->0.86, random-direction floor ~0); native J <-> borrowed
+  J++ agree 0.82-0.86, so the J++ transfer is sound. Instruct J-lens not yet run (logit-lens already matches).
+
 ## Detection (probe AUROC): replicates
 - 0.78 held-out / 0.84 best config (chance 0.5; paper 0.74-0.97). Logistic probe about the same (0.83).
 - Built from 211 synthetic pairs, tested on LCB rollouts -- cross-distribution, as in the paper.
@@ -45,7 +53,8 @@ OLMo 3.1 32B Think (main) + Instruct (steering). Benchmark: Impossible-LCB. Judg
 
 ## Not done (extensions)
 - Second big model end-to-end; direction decomposition; checkpoint tracking across OLMo's 47 RLVR
-  checkpoints (novel -- nobody's done it); probe-penalty RL; J-lens.
+  checkpoints (novel -- nobody's done it); probe-penalty RL.
+- J-lens done on Think (results/probe/JLENS.md); Instruct J-lens pending (~16 min compute, needs a GPU box).
 
 ## Files (github.com/lijuliana/2881r-mini-project)
 - P(hack): results/exp1/FINAL_RESULTS.md. Probe: results/probe/RESULTS.md. Steering: results/probe/INSTRUCT_STEERING.md.
@@ -61,6 +70,7 @@ Scorecard, us vs paper:
 |---|---|---|---|
 | Models reward-hack | 50-96% | 46% propensity / 29% success (oneoff) | replicates |
 | Logit-lens = cheating words | cheating, illicit, hardcoded | bypass, fake, cheat, dummy, pretend | replicates |
+| J-lens/J++ confirm readout | (paper uses logit lens) | 3 lenses agree; J sharpens -> `hardcoded`; cos 0.82-0.86 | confirms (Think) |
 | Probe detects hacking (AUROC) | 0.74-0.97 | 0.78 held-out / 0.84 best | replicates |
 | Probe ~= LLM monitor | yes | 52% vs 81% TPR @ 10% FPR | diverges |
 | Steering causes hacking | 0.5% -> 25% | baseline 2%, flat -8..+8 (null) | diverges |

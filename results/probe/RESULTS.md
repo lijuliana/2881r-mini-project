@@ -20,6 +20,22 @@ at mid-depth, despite none of these words being used to construct it:
 This reproduces the paper's finding (their vectors decoded to "cheating", "illicit", "hardcoded") — the
 direction is interpretable as a generic cheating concept. **Clear replication.**
 
+### 1b. J-lens / J++ confirm and sharpen the readout (extension, 2026-10-15)
+
+We put the same direction through two more faithful mid-layer lenses — a transfer-free finite-difference
+**J-lens** (Jacobian lens, `J_L·v`) and a borrowed **J++** lens (`koayon/jpp-lenses`, fit on Olmo-3 32B
+base) — cross-checked against the logit lens. Full writeup in [JLENS.md](JLENS.md). On **Think** (3/3
+self-checks passed):
+
+- All three lenses decode the direction to the same cheating cluster (*fake, bypass, pretend, cheating,
+  dummy, cheat, hardcoded*). So the readout is a property of the direction, not a logit-lens artifact.
+- The faithful lenses **sharpen** it: they pull explicit cheating tokens to the very top and surface ones
+  the logit lens misses — `pretending`, `magically`, `disguised`, and notably **`hardcoded`** at blocks
+  40/48. `hardcoded` is the representational echo of Exp1's behavior (100% of OLMo's hacks were hardcoding).
+- Lens agreement rises with depth and sits far above chance: logit↔J cos 0.69→0.86 over blocks 27→48 (random
+  direction baseline ≈ 0 at block 40). Native J-lens ↔ borrowed J++ agree at **0.82–0.86**, validating the
+  J++ transfer (M3 caveat). Instruct J-lens not yet run; its logit-lens readout (§1) already matches.
+
 ## 2. Detection: probe vs monitor — PARTIAL (core claim yes, "≈ monitor" no)
 
 Eval set n=112 (31 hacked, 81 clean; defective + incomplete excluded; all splits, originals = clean negatives).
