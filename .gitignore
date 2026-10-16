@@ -11,3 +11,17 @@ __pycache__/
 # scratch
 scratchpad/
 .DS_Store
+
+# --- Teammate large regenerable caches: excluded from this combined repo, kept on their forks ---
+rh_probe/results/dom/qwen/pair_acts_*.npz
+rh_probe/results/dom/qwen/dom_vectors.npz
+rh_probe/results/rollouts/*.jsonl.gz
+rh_probe/results/steer_neg/judged.jsonl
+rh_probe/results/t2/qwen_part1/index_0.jsonl
+rh_probe/results/t2/qwen_part1/scores_0.npz
+rh_probe/results/t2/qwen_part3/index_0.jsonl
+rh_probe/results/t2/qwen_part3/scores_0.npz
+rh_probe/results/labels/judge_full.jsonl
+rh_decomp/data/gen/bulk/pairs.jsonl
+rh_decomp/data/emotions/emo40/items.jsonl
+rh_decomp/data/qwen_tok/
