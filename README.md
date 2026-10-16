@@ -1,49 +1,63 @@
 # Reward-hacking probes on open models (CS 2881R)
 
-Can you catch a model reward-hacking just by reading its activations? Goodfire showed you can, on
-frontier models (*"Monitoring and Discovering Reward Hacking with Internal Representations during LLM
-Evaluations"*, arXiv 2609.19101). We tried to reproduce it on open models small enough to actually poke
-at — OLMo 3.1 32B, Qwen 3.8 27B, GLM-4.5-Air, gpt-oss — and then leaned on the parts that looked shaky.
+Can you catch a model reward-hacking just by reading its activations? Goodfire showed you can, on frontier
+models (*"Monitoring and Discovering Reward Hacking with Internal Representations during LLM Evaluations"*,
+arXiv 2609.19101). We reproduced it on open models small enough to actually poke at — OLMo 3.1 32B and
+Qwen 3.8 27B (plus gpt-oss and GLM-4.5-Air) — and then pushed on three extensions.
 
-## What we found
+The one-line takeaway: the paper's **difference-of-means "reward-hacking direction"** is a **real, readable
+thing** — it decodes to cheating and it detects hacking — but it is **not a steering knob**.
 
-The core object is a **difference-of-means "reward-hacking direction"**: one vector, built from cheap
-synthetic hack/honest pairs (never from real rollouts). It turns out to be a **real, readable thing — but
-not a steering knob.**
+## Replication — Goodfire's claims on open models
 
-- **It reads as cheating.** Decode the direction with a logit lens and you get *bypass, fake, cheat,
-  dummy, pretend, hardcoded* at mid-depth, on every model we tried — even though none of those words are
-  in the data it was built from. Clean replication of the paper's Table 1.
-- **More faithful lenses agree and sharpen it.** Running the OLMo direction through the Jacobian lens and
-  a borrowed J++ lens pulls the explicit tokens to the top and surfaces **`hardcoded`** — which is exactly
-  the hack OLMo actually does (100% of its hacks are hardcoding). Three independent lenses agree
-  (cos 0.82–0.86), so it isn't a logit-lens artifact. → `results/probe/JLENS.md`
-- **It detects hacking.** The probe scores AUROC 0.78–0.84 on OLMo and ~0.93 on Qwen, inside the paper's
-  0.74–0.97 band. But on OLMo it's weaker than a plain LLM monitor at low false-positive rates (52% vs
-  81% TPR at 10% FPR), so the paper's "probe ≈ monitor" claim doesn't fully hold at this scale.
-- **You can't steer with it — the consistent surprise.** Across OLMo (honeypot), Qwen (honeypot), and GLM
-  (suppression inside the real transcripts), amplifying the direction changes how much the model *talks
-  about* hacking, not whether it *does* it — and pushing hard enough to matter just breaks the model
-  first. The direction is a faithful **readout**, not a causal **lever**.
-- **What is the direction, really?** Decomposing it (on Qwen) shows it's mostly "take a shortcut" +
-  "notice you're being evaluated" — meaningful, not a trivial surface feature — but also tangled up with
-  contradiction / eval-awareness confounds, so it isn't a clean "hacking" axis. → `rh_decomp/results/`
+- **Models reward-hack.** OLMo 3.1 32B is a *competent naive hacker*: it hacks ~46% of impossible coding
+  tasks (near the frontier band), but only by hardcoding the tested inputs — it never games the harness the
+  sophisticated way bigger models do. → `results/exp1/FINAL_RESULTS.md`
+- **Logit lens → cheating words. ✓** The direction decodes to *bypass, fake, cheat, dummy, pretend,
+  artificially* at mid-depth, on both OLMo and Qwen — none of which are in the synthetic pairs it's built
+  from. Clean replication of the paper's Table 1.
+- **The probe detects hacking. ✓** AUROC 0.78–0.84 on OLMo and ~0.93 on Qwen — inside the paper's 0.74–0.97
+  band. → `results/probe/RESULTS.md`
+- **Probe ≈ LLM monitor? ✗** On OLMo the probe is weaker than a plain Claude monitor at low false-positive
+  rates (52% vs 81% TPR at 10% FPR), so the paper's strongest "probe replaces the monitor" claim doesn't
+  hold at this scale.
+- **Steering causes hacking? ✗** Amplifying the direction (honeypot setup) doesn't induce hacking — it
+  degrades the model into gibberish before it ever takes the bait. The one Goodfire result we couldn't
+  reproduce at this scale. → `results/probe/INSTRUCT_STEERING.md`
 
-And the behavioral baseline underneath all this: **OLMo 3.1 32B is a competent naive hacker.** It hacks
-~46% of impossible coding tasks (near the frontier band) but only by hardcoding the tested inputs — it
-never games the harness the sophisticated way bigger models do. → `results/exp1/FINAL_RESULTS.md`
+## Extension 1 — Jacobian-lens readout (OLMo)
 
-## Who did what
+Is the "cheating" readout real, or a logit-lens artifact? We ran the direction through two more faithful
+lenses — a transfer-free Jacobian lens and a borrowed J++ lens. All three agree, and the faithful ones
+**sharpen** the reading, pulling **`hardcoded`** to the top at mid-depth — which is exactly the hack OLMo
+actually does (100% of its hacks are hardcoding). Native J-lens and J++ agree at cos 0.82–0.86, validating
+the borrowed lens. So the direction genuinely encodes cheating. → `results/probe/JLENS.md` (code `probe/jlens/`)
 
-- **OLMo 3.1 32B** (core of this repo) — P(hack), the DoM probe, logit + **J-lens / J++** readouts, and
-  steering. Code in `exp1/`, `probe/` (incl. `probe/jlens/`), `synth/`; results in `results/`.
-- **Direction decomposition on Qwen 3.8 27B** (Niranjan) — what the direction breaks into
-  (shortcut / eval-awareness / emotions) and its confounds. `rh_decomp/`.
-- **Probe + steering pipeline on Qwen / gpt-oss / GLM** (Agastya) — detection, honeypot steering, and
-  suppression-inside-transcripts. `rh_probe/`.
+## Extension 2 — What the direction is actually made of (Qwen)
 
-The large activation/rollout caches from the Qwen and GLM runs live on the teammates' own forks, not here,
-to keep this repo light (see `.gitignore`).
+Decomposing `v_hack` shows it's mostly **"take a shortcut" + "notice you're being evaluated"** (and, among
+emotions, *low calm* — not desperation). So it's meaningful, not a trivial surface feature — but it's also
+tangled up with contradiction / eval-awareness confounds, so it isn't a clean, isolated "hacking" axis.
+→ `rh_decomp/` (Niranjan)
+
+## Extension 3 — Across a model zoo (Qwen / gpt-oss / GLM)
+
+The probe + steering pipeline run on three more open models. Detection replicates (Qwen AUROC ~0.93), and
+steering — pushing both *toward* the direction and *against* it, including inside the real multi-turn
+transcripts on GLM — moves how much the model **talks about** hacking, never whether it **carries it out**,
+and breaks the model before it flips. The same readout-not-a-lever story, confirmed across model families.
+→ `rh_probe/` (Agastya)
+
+## Layout
+
+- `exp1/`, `probe/` (incl. `probe/jlens/`), `synth/`, `results/` — OLMo work (P(hack), DoM probe, logit +
+  J-lens readouts, steering).
+- `rh_decomp/` — Qwen direction decomposition (Niranjan).
+- `rh_probe/` — multi-model probe + steering pipeline (Agastya).
+- `notes/` — paper notes, background, replication plan, protocol.
+
+Large regenerable activation/rollout caches from the Qwen/GLM runs live on the teammates' own forks, not
+here, to keep this repo light (see `.gitignore`).
 
 ## Running it
 
